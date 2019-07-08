@@ -204,6 +204,7 @@ setup(
         'pyqt': ['PyQt5'],
         'picamera': ['picamera'],
         'gphoto2-cffi': ['gphoto2-cffi'],
+        'Adafruit-WS2801' : ['Adafruit-WS2801'],
         'dev': ['setuptools', 'wheel', 'twine', 'Babel',],
     },
 

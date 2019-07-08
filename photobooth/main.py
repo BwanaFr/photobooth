@@ -37,6 +37,7 @@ from .util import lookup_and_import
 from .StateMachine import Context, ErrorEvent
 from .Threading import Communicator, Workers
 from .worker import Worker
+from .leds import Leds
 
 # Globally install gettext for I18N
 gettext.install('photobooth', 'photobooth/locale')
@@ -144,6 +145,30 @@ class GpioProcess(mp.Process):
 
         logging.debug('GpioProcess: Exit')
 
+class LedsProcess(mp.Process):
+
+    def __init__(self, argv, config, comm):
+
+        super().__init__()
+        self.daemon = True
+
+        self._cfg = config
+        self._comm = comm
+
+    def run(self):
+
+        logging.debug('LedsProcess: Initializing...')
+
+        while True:
+            try:
+                logging.debug('LedsProcess: Running...')
+                if Leds(self._cfg, self._comm).run():
+                    break
+            except Exception as e:
+                logging.exception('LedsProcess: Exception "{}"'.format(e))
+                self._comm.send(Workers.MASTER, ErrorEvent('Leds', str(e)))
+
+        logging.debug('LedsProcess: Exit')
 
 def parseArgs(argv):
 
@@ -185,7 +210,8 @@ def run(argv, is_run):
     # 3. GUI
     # 4. Postprocessing worker
     # 5. GPIO handler
-    proc_classes = (CameraProcess, WorkerProcess, GuiProcess, GpioProcess)
+    # 6. LEDs processes
+    proc_classes = (CameraProcess, WorkerProcess, GuiProcess, GpioProcess, LedsProcess)
     procs = [P(argv, config, comm) for P in proc_classes]
 
     for proc in procs:
