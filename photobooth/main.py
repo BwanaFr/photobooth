@@ -30,14 +30,13 @@ import logging
 import logging.handlers
 import multiprocessing as mp
 
-from . import camera, gui
+from . import camera, gui, leds
 from .Config import Config
 from .gpio import Gpio
 from .util import lookup_and_import
 from .StateMachine import Context, ErrorEvent
 from .Threading import Communicator, Workers
 from .worker import Worker
-from .leds import Leds
 
 # Globally install gettext for I18N
 gettext.install('photobooth', 'photobooth/locale')
@@ -158,11 +157,14 @@ class LedsProcess(mp.Process):
     def run(self):
 
         logging.debug('LedsProcess: Initializing...')
+        LedModule = lookup_and_import(
+                leds.modules, self._cfg.get('Leds', 'module'), 'leds')
+        ledinst = leds.Leds(self._cfg, self._comm, LedModule)
 
         while True:
             try:
                 logging.debug('LedsProcess: Running...')
-                if Leds(self._cfg, self._comm).run():
+                if ledinst.run():
                     break
             except Exception as e:
                 logging.exception('LedsProcess: Exception "{}"'.format(e))
