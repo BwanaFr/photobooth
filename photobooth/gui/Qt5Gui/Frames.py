@@ -29,6 +29,7 @@ from PyQt5 import QtWidgets
 from .. import modules
 from ... import camera
 from ... import printer
+from ... import leds
 
 from . import Widgets
 from . import styles
@@ -475,6 +476,7 @@ class Settings(QtWidgets.QFrame):
         tabs.addTab(self.createPictureSettings(), _('Picture'))
         tabs.addTab(self.createStorageSettings(), _('Storage'))
         tabs.addTab(self.createGpioSettings(), _('GPIO'))
+        tabs.addTab(self.createLEDSettings(), _('LED'))
         tabs.addTab(self.createPrinterSettings(), _('Printer'))
         tabs.addTab(self.createMailerSettings(), _('Mailer'))
         tabs.addTab(self.createUploadSettings(), _('Upload'))
@@ -817,6 +819,57 @@ class Settings(QtWidgets.QFrame):
         layout.addRow(_('Trigger button pin (BCM numbering):'), trig_pin)
         layout.addRow(_('Idle lamp pin (BCM numbering):'), lamp_pin)
         layout.addRow(_('RGB LED pins (BCM numbering):'), lay_rgb)
+
+        widget = QtWidgets.QWidget()
+        widget.setLayout(layout)
+        return widget
+
+    def createLEDSettings(self):
+
+        self.init('Leds')
+
+        enable = QtWidgets.QCheckBox()
+        enable.setChecked(self._cfg.getBool('Leds', 'enable'))
+        self.add('Leds', 'enable', enable)
+
+        module = self.createModuleComboBox(leds.modules,
+                                           self._cfg.get('Leds', 'module'))
+        self.add('Leds', 'module', module)
+
+        led_count = QtWidgets.QSpinBox()
+        led_count.setRange(1, 256)
+        led_count.setValue(self._cfg.getInt('Leds', 'led_count'))
+        self.add('Leds', 'led_count', led_count)
+
+        left_btn = QtWidgets.QSpinBox()
+        left_btn.setRange(-1, 256)
+        left_btn.setValue(self._cfg.getInt('Leds', 'left_index'))
+        self.add('Leds', 'left_index', left_btn)
+
+        right_btn = QtWidgets.QSpinBox()
+        right_btn.setRange(-1, 256)
+        right_btn.setValue(self._cfg.getInt('Leds', 'right_index'))
+        self.add('Leds', 'right_index', right_btn)
+
+        spi_clk = QtWidgets.QSpinBox()
+        spi_clk.setRange(0, 64)
+        spi_clk.setValue(self._cfg.getInt('Leds', 'spi_clk'))
+        self.add('Leds', 'spi_clk', spi_clk)
+
+        spi_data = QtWidgets.QSpinBox()
+        spi_data.setRange(0, 64)
+        spi_data.setValue(self._cfg.getInt('Leds', 'spi_data'))
+        self.add('Leds', 'spi_data', spi_clk)
+
+
+        layout = QtWidgets.QFormLayout()
+        layout.addRow(_('Enable LED:'), enable)
+        layout.addRow(_('Module:'), module)
+        layout.addRow(_('Number of LEDs:'), led_count)
+        layout.addRow(_('Left button LED index (-1 to disable):'), left_btn)
+        layout.addRow(_('Right button LED index (-1 to disable):'), right_btn)
+        layout.addRow(_('SPI clock pin (BCM pin numbering scheme):'), spi_clk)
+        layout.addRow(_('SPI data pin (BCM pin numbering scheme):'), spi_data)
 
         widget = QtWidgets.QWidget()
         widget.setLayout(layout)

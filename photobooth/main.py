@@ -30,7 +30,7 @@ import logging
 import logging.handlers
 import multiprocessing as mp
 
-from . import camera, gui
+from . import camera, gui, leds
 from .Config import Config
 from .gpio import Gpio
 from .util import lookup_and_import
@@ -144,6 +144,33 @@ class GpioProcess(mp.Process):
 
         logging.debug('GpioProcess: Exit')
 
+class LedsProcess(mp.Process):
+
+    def __init__(self, argv, config, comm):
+
+        super().__init__()
+        self.daemon = True
+
+        self._cfg = config
+        self._comm = comm
+
+    def run(self):
+
+        logging.debug('LedsProcess: Initializing...')
+        LedModule = lookup_and_import(
+                leds.modules, self._cfg.get('Leds', 'module'), 'leds')
+        ledinst = leds.Leds(self._cfg, self._comm, LedModule)
+
+        while True:
+            try:
+                logging.debug('LedsProcess: Running...')
+                if ledinst.run():
+                    break
+            except Exception as e:
+                logging.exception('LedsProcess: Exception "{}"'.format(e))
+                self._comm.send(Workers.MASTER, ErrorEvent('Leds', str(e)))
+
+        logging.debug('LedsProcess: Exit')
 
 def parseArgs(argv):
 
@@ -185,7 +212,8 @@ def run(argv, is_run):
     # 3. GUI
     # 4. Postprocessing worker
     # 5. GPIO handler
-    proc_classes = (CameraProcess, WorkerProcess, GuiProcess, GpioProcess)
+    # 6. LEDs processes
+    proc_classes = (CameraProcess, WorkerProcess, GuiProcess, GpioProcess, LedsProcess)
     procs = [P(argv, config, comm) for P in proc_classes]
 
     for proc in procs:
